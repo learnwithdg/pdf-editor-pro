@@ -428,20 +428,33 @@ class AnnotationPainter extends CustomPainter {
         );
         break;
       case AnnotationType.text:
+        _drawTextAnnotationDecoration(canvas, rect, annotation);
         final tp = TextPainter(
           text: TextSpan(
             text: annotation.text,
             style: TextStyle(
               color: annotation.color,
               fontSize: annotation.textFontSize,
-              fontWeight: FontWeight.w600,
+              fontWeight: annotation.textBold
+                  ? FontWeight.w800
+                  : FontWeight.w600,
+              fontStyle: annotation.textItalic
+                  ? FontStyle.italic
+                  : FontStyle.normal,
+              decoration: annotation.textUnderline
+                  ? TextDecoration.underline
+                  : null,
             ),
           ),
           textDirection: TextDirection.ltr,
+          textAlign: _textAlignFor(annotation.textAlignment),
           maxLines: 8,
           ellipsis: '...',
-        )..layout(maxWidth: rect.width);
-        tp.paint(canvas, rect.topLeft);
+        )..layout(maxWidth: max(0.0, rect.width - 12));
+        final top = annotation.textBoxStyle == PdfTextBoxStyle.line
+            ? rect.top
+            : rect.top + max(6, (rect.height - tp.height) / 2);
+        tp.paint(canvas, Offset(rect.left + 6, top));
         break;
       case AnnotationType.ink:
       case AnnotationType.signature:
@@ -501,6 +514,72 @@ class AnnotationPainter extends CustomPainter {
         break;
     }
   }
+
+  void _drawTextAnnotationDecoration(
+    Canvas canvas,
+    Rect rect,
+    PdfAnnotation annotation,
+  ) {
+    final fillPaint = Paint()
+      ..color = annotation.textFillColor
+      ..style = PaintingStyle.fill;
+    final borderPaint = Paint()
+      ..color = annotation.textBorderColor
+      ..strokeWidth = annotation.textBorderWidth
+      ..style = PaintingStyle.stroke;
+
+    final hasFill = _colorAlpha(annotation.textFillColor) > 0;
+    final hasBorder = annotation.textBorderWidth > 0;
+
+    switch (annotation.textBoxStyle) {
+      case PdfTextBoxStyle.plain:
+        return;
+      case PdfTextBoxStyle.line:
+        if (hasBorder) {
+          canvas.drawLine(rect.bottomLeft, rect.bottomRight, borderPaint);
+        }
+        return;
+      case PdfTextBoxStyle.box:
+      case PdfTextBoxStyle.rectangle:
+        if (hasFill) {
+          canvas.drawRect(rect, fillPaint);
+        }
+        if (hasBorder) {
+          canvas.drawRect(rect, borderPaint);
+        }
+        return;
+      case PdfTextBoxStyle.roundedRectangle:
+        final rounded = RRect.fromRectAndRadius(
+          rect,
+          const Radius.circular(14),
+        );
+        if (hasFill) {
+          canvas.drawRRect(rounded, fillPaint);
+        }
+        if (hasBorder) {
+          canvas.drawRRect(rounded, borderPaint);
+        }
+        return;
+      case PdfTextBoxStyle.circle:
+        if (hasFill) {
+          canvas.drawOval(rect, fillPaint);
+        }
+        if (hasBorder) {
+          canvas.drawOval(rect, borderPaint);
+        }
+        return;
+    }
+  }
+
+  TextAlign _textAlignFor(PdfTextAlignment alignment) {
+    return switch (alignment) {
+      PdfTextAlignment.left => TextAlign.left,
+      PdfTextAlignment.center => TextAlign.center,
+      PdfTextAlignment.right => TextAlign.right,
+    };
+  }
+
+  int _colorAlpha(Color color) => (color.toARGB32() >> 24) & 0xFF;
 
   void _drawArrow(Canvas canvas, Offset start, Offset end, Paint paint) {
     canvas.drawLine(start, end, paint);

@@ -16,6 +16,10 @@ enum AnnotationType {
 
 enum ShapeType { line, arrow, rectangle, circle }
 
+enum PdfTextBoxStyle { plain, box, line, rectangle, roundedRectangle, circle }
+
+enum PdfTextAlignment { left, center, right }
+
 class PdfFileDocument extends Equatable {
   const PdfFileDocument({
     required this.id,
@@ -96,6 +100,14 @@ class PdfAnnotation extends Equatable {
     this.tableCells = const [],
     this.tableBorderWidth = 0.0,
     this.textFontSize = 18.0,
+    this.textBoxStyle = PdfTextBoxStyle.plain,
+    this.textAlignment = PdfTextAlignment.left,
+    this.textFillColor = const Color(0x00000000),
+    this.textBorderColor = const Color(0xFF111827),
+    this.textBorderWidth = 0.0,
+    this.textBold = false,
+    this.textItalic = false,
+    this.textUnderline = false,
     this.strokeWidth = 2.0,
     this.points = const [],
     this.shapeType,
@@ -120,6 +132,14 @@ class PdfAnnotation extends Equatable {
   final List<String> tableCells;
   final double tableBorderWidth;
   final double textFontSize;
+  final PdfTextBoxStyle textBoxStyle;
+  final PdfTextAlignment textAlignment;
+  final Color textFillColor;
+  final Color textBorderColor;
+  final double textBorderWidth;
+  final bool textBold;
+  final bool textItalic;
+  final bool textUnderline;
   final double strokeWidth;
   final List<Offset> points;
   final ShapeType? shapeType;
@@ -144,6 +164,14 @@ class PdfAnnotation extends Equatable {
     List<String>? tableCells,
     double? tableBorderWidth,
     double? textFontSize,
+    PdfTextBoxStyle? textBoxStyle,
+    PdfTextAlignment? textAlignment,
+    Color? textFillColor,
+    Color? textBorderColor,
+    double? textBorderWidth,
+    bool? textBold,
+    bool? textItalic,
+    bool? textUnderline,
     double? strokeWidth,
     List<Offset>? points,
     ShapeType? shapeType,
@@ -168,6 +196,14 @@ class PdfAnnotation extends Equatable {
       tableCells: tableCells ?? this.tableCells,
       tableBorderWidth: tableBorderWidth ?? this.tableBorderWidth,
       textFontSize: textFontSize ?? this.textFontSize,
+      textBoxStyle: textBoxStyle ?? this.textBoxStyle,
+      textAlignment: textAlignment ?? this.textAlignment,
+      textFillColor: textFillColor ?? this.textFillColor,
+      textBorderColor: textBorderColor ?? this.textBorderColor,
+      textBorderWidth: textBorderWidth ?? this.textBorderWidth,
+      textBold: textBold ?? this.textBold,
+      textItalic: textItalic ?? this.textItalic,
+      textUnderline: textUnderline ?? this.textUnderline,
       strokeWidth: strokeWidth ?? this.strokeWidth,
       points: points ?? this.points,
       shapeType: shapeType ?? this.shapeType,
@@ -195,6 +231,14 @@ class PdfAnnotation extends Equatable {
     tableCells,
     tableBorderWidth,
     textFontSize,
+    textBoxStyle,
+    textAlignment,
+    textFillColor,
+    textBorderColor,
+    textBorderWidth,
+    textBold,
+    textItalic,
+    textUnderline,
     strokeWidth,
     points,
     shapeType,

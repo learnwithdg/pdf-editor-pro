@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -242,6 +243,14 @@ class PdfBloc extends Bloc<PdfEvent, PdfState> {
       tableCells: List<String>.unmodifiable(event.tableCells),
       tableBorderWidth: event.tableBorderWidth ?? 0.0,
       textFontSize: event.textFontSize ?? 18.0,
+      textBoxStyle: event.textBoxStyle ?? PdfTextBoxStyle.plain,
+      textAlignment: event.textAlignment ?? PdfTextAlignment.left,
+      textFillColor: event.textFillColor ?? const Color(0x00000000),
+      textBorderColor: event.textBorderColor ?? event.color,
+      textBorderWidth: event.textBorderWidth ?? 0.0,
+      textBold: event.textBold ?? false,
+      textItalic: event.textItalic ?? false,
+      textUnderline: event.textUnderline ?? false,
       strokeWidth: event.strokeWidth ?? 2.0,
       points: List<Offset>.unmodifiable(event.points),
       shapeType: event.shapeType,
@@ -297,7 +306,22 @@ class PdfBloc extends Bloc<PdfEvent, PdfState> {
                   imageFocusY: event.imageFocusY ?? annotation.imageFocusY,
                   tableBorderWidth:
                       event.tableBorderWidth ?? annotation.tableBorderWidth,
+                  text: event.text ?? annotation.text,
+                  color: event.color ?? annotation.color,
                   textFontSize: event.textFontSize ?? annotation.textFontSize,
+                  textBoxStyle: event.textBoxStyle ?? annotation.textBoxStyle,
+                  textAlignment:
+                      event.textAlignment ?? annotation.textAlignment,
+                  textFillColor:
+                      event.textFillColor ?? annotation.textFillColor,
+                  textBorderColor:
+                      event.textBorderColor ?? annotation.textBorderColor,
+                  textBorderWidth:
+                      event.textBorderWidth ?? annotation.textBorderWidth,
+                  textBold: event.textBold ?? annotation.textBold,
+                  textItalic: event.textItalic ?? annotation.textItalic,
+                  textUnderline:
+                      event.textUnderline ?? annotation.textUnderline,
                 )
               : annotation,
         )
@@ -470,19 +494,29 @@ class PdfBloc extends Bloc<PdfEvent, PdfState> {
           canvas.drawLine(rect.centerLeft, rect.centerRight, paint);
           break;
         case AnnotationType.text:
+          _drawTextAnnotationDecorationToCanvas(canvas, rect, a, w / 1000);
           final tp = TextPainter(
             text: TextSpan(
               text: a.text,
               style: TextStyle(
                 color: a.color,
                 fontSize: a.textFontSize * (w / 1000) * 1.4,
-                fontWeight: FontWeight.w600,
+                fontWeight: a.textBold ? FontWeight.w800 : FontWeight.w600,
+                fontStyle: a.textItalic ? FontStyle.italic : FontStyle.normal,
+                decoration: a.textUnderline ? TextDecoration.underline : null,
               ),
             ),
             textDirection: TextDirection.ltr,
+            textAlign: _textAlignFor(a.textAlignment),
+            maxLines: 8,
+            ellipsis: '...',
           );
-          tp.layout(maxWidth: rect.width);
-          tp.paint(canvas, rect.topLeft);
+          tp.layout(maxWidth: math.max(0.0, rect.width - (12 * (w / 1000))));
+          final top = a.textBoxStyle == PdfTextBoxStyle.line
+              ? rect.top
+              : rect.top +
+                    math.max(6 * (w / 1000), (rect.height - tp.height) / 2);
+          tp.paint(canvas, Offset(rect.left + (6 * (w / 1000)), top));
           break;
         case AnnotationType.image:
           if (a.imageBytes != null && a.imageBytes!.isNotEmpty) {
@@ -561,6 +595,73 @@ class PdfBloc extends Bloc<PdfEvent, PdfState> {
         break;
     }
   }
+
+  void _drawTextAnnotationDecorationToCanvas(
+    Canvas canvas,
+    Rect rect,
+    PdfAnnotation annotation,
+    double scaleFactor,
+  ) {
+    final fillPaint = Paint()
+      ..color = annotation.textFillColor
+      ..style = PaintingStyle.fill;
+    final borderPaint = Paint()
+      ..color = annotation.textBorderColor
+      ..strokeWidth = annotation.textBorderWidth * scaleFactor
+      ..style = PaintingStyle.stroke;
+
+    final hasFill = _colorAlpha(annotation.textFillColor) > 0;
+    final hasBorder = annotation.textBorderWidth > 0;
+
+    switch (annotation.textBoxStyle) {
+      case PdfTextBoxStyle.plain:
+        return;
+      case PdfTextBoxStyle.line:
+        if (hasBorder) {
+          canvas.drawLine(rect.bottomLeft, rect.bottomRight, borderPaint);
+        }
+        return;
+      case PdfTextBoxStyle.box:
+      case PdfTextBoxStyle.rectangle:
+        if (hasFill) {
+          canvas.drawRect(rect, fillPaint);
+        }
+        if (hasBorder) {
+          canvas.drawRect(rect, borderPaint);
+        }
+        return;
+      case PdfTextBoxStyle.roundedRectangle:
+        final rounded = RRect.fromRectAndRadius(
+          rect,
+          Radius.circular(14 * scaleFactor),
+        );
+        if (hasFill) {
+          canvas.drawRRect(rounded, fillPaint);
+        }
+        if (hasBorder) {
+          canvas.drawRRect(rounded, borderPaint);
+        }
+        return;
+      case PdfTextBoxStyle.circle:
+        if (hasFill) {
+          canvas.drawOval(rect, fillPaint);
+        }
+        if (hasBorder) {
+          canvas.drawOval(rect, borderPaint);
+        }
+        return;
+    }
+  }
+
+  TextAlign _textAlignFor(PdfTextAlignment alignment) {
+    return switch (alignment) {
+      PdfTextAlignment.left => TextAlign.left,
+      PdfTextAlignment.center => TextAlign.center,
+      PdfTextAlignment.right => TextAlign.right,
+    };
+  }
+
+  int _colorAlpha(Color color) => (color.toARGB32() >> 24) & 0xFF;
 
   Future<void> _drawImageAnnotationToCanvas(
     Canvas canvas,

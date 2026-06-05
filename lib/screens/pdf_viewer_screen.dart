@@ -624,17 +624,187 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     Offset position,
     Size canvasSize,
   ) async {
-    final controller = TextEditingController();
-    var fontSize = 18.0;
-    var width = 0.42;
-    var height = 0.08;
-    final draft = await showModalBottomSheet<_TextInsertDraft>(
+    final draft = await _showOfficeTextSheet(
+      context,
+      initialColor: state.selectedColor,
+    );
+
+    if (!context.mounted || draft == null || draft.text.isEmpty) {
+      return;
+    }
+
+    Vibration.vibrate(duration: 30);
+    context.read<PdfBloc>().add(
+      AddAnnotationEvent(
+        pageIndex: state.currentPage,
+        x: position.dx / canvasSize.width,
+        y: position.dy / canvasSize.height,
+        type: ToolType.text,
+        text: draft.text,
+        color: draft.textColor,
+        width: draft.width,
+        height: draft.height,
+        textFontSize: draft.fontSize,
+        textBoxStyle: draft.boxStyle,
+        textAlignment: draft.alignment,
+        textFillColor: draft.fillColor,
+        textBorderColor: draft.borderColor,
+        textBorderWidth: draft.borderWidth,
+        textBold: draft.bold,
+        textItalic: draft.italic,
+        textUnderline: draft.underline,
+      ),
+    );
+  }
+
+  Future<void> _editTextAnnotation(
+    BuildContext context,
+    PdfAnnotation annotation,
+  ) async {
+    final draft = await _showOfficeTextSheet(
+      context,
+      initialColor: annotation.color,
+      existing: annotation,
+    );
+
+    if (!context.mounted || draft == null || draft.text.isEmpty) {
+      return;
+    }
+
+    context.read<PdfBloc>().add(
+      UpdateAnnotationEvent(
+        annotationId: annotation.id,
+        text: draft.text,
+        color: draft.textColor,
+        width: draft.width,
+        height: draft.height,
+        textFontSize: draft.fontSize,
+        textBoxStyle: draft.boxStyle,
+        textAlignment: draft.alignment,
+        textFillColor: draft.fillColor,
+        textBorderColor: draft.borderColor,
+        textBorderWidth: draft.borderWidth,
+        textBold: draft.bold,
+        textItalic: draft.italic,
+        textUnderline: draft.underline,
+      ),
+    );
+  }
+
+  Future<_TextInsertDraft?> _showOfficeTextSheet(
+    BuildContext context, {
+    required Color initialColor,
+    PdfAnnotation? existing,
+  }) async {
+    final controller = TextEditingController(text: existing?.text ?? '');
+    var boxStyle = existing?.textBoxStyle ?? PdfTextBoxStyle.plain;
+    var alignment = existing?.textAlignment ?? PdfTextAlignment.left;
+    var textColor = existing?.color ?? initialColor;
+    var fillColor = existing?.textFillColor ?? const Color(0x00000000);
+    var borderColor = existing?.textBorderColor ?? initialColor;
+    var borderWidth = existing?.textBorderWidth ?? 0.0;
+    var fontSize = existing?.textFontSize ?? 18.0;
+    var width = existing?.width ?? 0.42;
+    var height = existing?.height ?? 0.08;
+    var bold = existing?.textBold ?? false;
+    var italic = existing?.textItalic ?? false;
+    var underline = existing?.textUnderline ?? false;
+
+    final result = await showModalBottomSheet<_TextInsertDraft>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final theme = Theme.of(context);
+            const transparent = Color(0x00000000);
+            final colorChoices = <Color>[
+              Colors.black,
+              const Color(0xFF0E6B5C),
+              const Color(0xFF1976D2),
+              const Color(0xFFD32F2F),
+              const Color(0xFF8E24AA),
+              const Color(0xFFFF9800),
+              Colors.white,
+            ];
+            final fillChoices = <Color>[
+              transparent,
+              Colors.white,
+              const Color(0xFFFFF3C4),
+              const Color(0xFFE0F2FE),
+              const Color(0xFFE9D5FF),
+              const Color(0xFFFFDAD6),
+              const Color(0xFFE8F5E9),
+            ];
+            final modeChoices =
+                <({PdfTextBoxStyle value, String label, IconData icon})>[
+                  (
+                    value: PdfTextBoxStyle.plain,
+                    label: 'Text',
+                    icon: Icons.text_fields_rounded,
+                  ),
+                  (
+                    value: PdfTextBoxStyle.box,
+                    label: 'Box',
+                    icon: Icons.check_box_outline_blank_rounded,
+                  ),
+                  (
+                    value: PdfTextBoxStyle.line,
+                    label: 'Line',
+                    icon: Icons.horizontal_rule_rounded,
+                  ),
+                  (
+                    value: PdfTextBoxStyle.rectangle,
+                    label: 'Rect',
+                    icon: Icons.crop_square_rounded,
+                  ),
+                  (
+                    value: PdfTextBoxStyle.roundedRectangle,
+                    label: 'Round',
+                    icon: Icons.rounded_corner_rounded,
+                  ),
+                  (
+                    value: PdfTextBoxStyle.circle,
+                    label: 'Oval',
+                    icon: Icons.circle_outlined,
+                  ),
+                ];
+
+            Widget buildColorDot(
+              Color color,
+              Color selected,
+              ValueChanged<Color> onTap,
+            ) {
+              final isTransparent = ((color.toARGB32() >> 24) & 0xFF) == 0;
+              final isSelected = color.toARGB32() == selected.toARGB32();
+              return GestureDetector(
+                onTap: () => setModalState(() => onTap(color)),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  margin: const EdgeInsets.only(right: 8, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isTransparent ? Colors.white : color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outlineVariant,
+                      width: isSelected ? 3 : 1,
+                    ),
+                  ),
+                  child: isTransparent
+                      ? Icon(
+                          Icons.format_color_reset_rounded,
+                          size: 17,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )
+                      : null,
+                ),
+              );
+            }
+
             return SafeArea(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -649,16 +819,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Add Clean Text',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        existing == null
+                            ? 'Office Text Insert'
+                            : 'Edit Office Text',
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Text is placed without a default background. Drag or resize it later with the Text tool.',
+                        'Create plain text, text boxes, line text, or text inside shapes. Drag and resize later like an office document.',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -670,6 +842,98 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                           hintText: 'Type text for this PDF page...',
                           border: OutlineInputBorder(),
                         ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Text Style',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: modeChoices
+                            .map((mode) {
+                              final selected = boxStyle == mode.value;
+                              return ChoiceChip(
+                                avatar: Icon(mode.icon, size: 16),
+                                label: Text(mode.label),
+                                selected: selected,
+                                onSelected: (_) => setModalState(() {
+                                  boxStyle = mode.value;
+                                  if (boxStyle != PdfTextBoxStyle.plain &&
+                                      borderWidth == 0) {
+                                    borderWidth =
+                                        boxStyle == PdfTextBoxStyle.line
+                                        ? 2.0
+                                        : 1.2;
+                                  }
+                                }),
+                              );
+                            })
+                            .toList(growable: false),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          FilterChip(
+                            selected: bold,
+                            label: const Text('Bold'),
+                            avatar: const Icon(
+                              Icons.format_bold_rounded,
+                              size: 16,
+                            ),
+                            onSelected: (value) =>
+                                setModalState(() => bold = value),
+                          ),
+                          const SizedBox(width: 8),
+                          FilterChip(
+                            selected: italic,
+                            label: const Text('Italic'),
+                            avatar: const Icon(
+                              Icons.format_italic_rounded,
+                              size: 16,
+                            ),
+                            onSelected: (value) =>
+                                setModalState(() => italic = value),
+                          ),
+                          const SizedBox(width: 8),
+                          FilterChip(
+                            selected: underline,
+                            label: const Text('Underline'),
+                            avatar: const Icon(
+                              Icons.format_underline_rounded,
+                              size: 16,
+                            ),
+                            onSelected: (value) =>
+                                setModalState(() => underline = value),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SegmentedButton<PdfTextAlignment>(
+                        segments: const <ButtonSegment<PdfTextAlignment>>[
+                          ButtonSegment(
+                            value: PdfTextAlignment.left,
+                            icon: Icon(Icons.format_align_left_rounded),
+                            label: Text('Left'),
+                          ),
+                          ButtonSegment(
+                            value: PdfTextAlignment.center,
+                            icon: Icon(Icons.format_align_center_rounded),
+                            label: Text('Center'),
+                          ),
+                          ButtonSegment(
+                            value: PdfTextAlignment.right,
+                            icon: Icon(Icons.format_align_right_rounded),
+                            label: Text('Right'),
+                          ),
+                        ],
+                        selected: {alignment},
+                        onSelectionChanged: (value) =>
+                            setModalState(() => alignment = value.first),
                       ),
                       const SizedBox(height: 14),
                       Text('Font size ${fontSize.toStringAsFixed(0)}'),
@@ -699,6 +963,70 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         onChanged: (value) =>
                             setModalState(() => height = value),
                       ),
+                      Text('Border width ${borderWidth.toStringAsFixed(1)}'),
+                      Slider(
+                        value: borderWidth.clamp(0.0, 6.0),
+                        min: 0,
+                        max: 6,
+                        divisions: 30,
+                        onChanged: (value) =>
+                            setModalState(() => borderWidth = value),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Text color',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        children: colorChoices
+                            .map(
+                              (color) => buildColorDot(
+                                color,
+                                textColor,
+                                (value) => textColor = value,
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      Text(
+                        'Shape fill',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        children: fillChoices
+                            .map(
+                              (color) => buildColorDot(
+                                color,
+                                fillColor,
+                                (value) => fillColor = value,
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      Text(
+                        'Border color',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        children: colorChoices
+                            .map(
+                              (color) => buildColorDot(
+                                color,
+                                borderColor,
+                                (value) => borderColor = value,
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -720,14 +1048,25 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                   sheetContext,
                                   _TextInsertDraft(
                                     text: text,
+                                    textColor: textColor,
                                     fontSize: fontSize,
                                     width: width,
                                     height: height,
+                                    boxStyle: boxStyle,
+                                    alignment: alignment,
+                                    fillColor: fillColor,
+                                    borderColor: borderColor,
+                                    borderWidth: borderWidth,
+                                    bold: bold,
+                                    italic: italic,
+                                    underline: underline,
                                   ),
                                 );
                               },
                               icon: const Icon(Icons.text_fields_rounded),
-                              label: const Text('Add Text'),
+                              label: Text(
+                                existing == null ? 'Add Text' : 'Save Text',
+                              ),
                             ),
                           ),
                         ],
@@ -742,25 +1081,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       },
     );
     controller.dispose();
-
-    if (!context.mounted || draft == null || draft.text.isEmpty) {
-      return;
-    }
-
-    Vibration.vibrate(duration: 30);
-    context.read<PdfBloc>().add(
-      AddAnnotationEvent(
-        pageIndex: state.currentPage,
-        x: position.dx / canvasSize.width,
-        y: position.dy / canvasSize.height,
-        type: ToolType.text,
-        text: draft.text,
-        color: state.selectedColor,
-        width: draft.width,
-        height: draft.height,
-        textFontSize: draft.fontSize,
-      ),
-    );
+    return result;
   }
 
   Future<void> _showSignatureDialog(
@@ -1618,6 +1939,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (selected.type == AnnotationType.text) {
       quickActions.addAll([
         _MiniObjectButton(
+          label: 'Edit',
+          onTap: () => unawaited(_editTextAnnotation(context, selected)),
+        ),
+        _MiniObjectButton(
           label: 'A-',
           onTap: () => context.read<PdfBloc>().add(
             UpdateAnnotationEvent(
@@ -1632,6 +1957,33 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             UpdateAnnotationEvent(
               annotationId: selected.id,
               textFontSize: (selected.textFontSize + 2).clamp(8.0, 56.0),
+            ),
+          ),
+        ),
+        _MiniObjectButton(
+          label: selected.textBold ? 'B on' : 'B',
+          onTap: () => context.read<PdfBloc>().add(
+            UpdateAnnotationEvent(
+              annotationId: selected.id,
+              textBold: !selected.textBold,
+            ),
+          ),
+        ),
+        _MiniObjectButton(
+          label: selected.textItalic ? 'I on' : 'I',
+          onTap: () => context.read<PdfBloc>().add(
+            UpdateAnnotationEvent(
+              annotationId: selected.id,
+              textItalic: !selected.textItalic,
+            ),
+          ),
+        ),
+        _MiniObjectButton(
+          label: selected.textUnderline ? 'U on' : 'U',
+          onTap: () => context.read<PdfBloc>().add(
+            UpdateAnnotationEvent(
+              annotationId: selected.id,
+              textUnderline: !selected.textUnderline,
             ),
           ),
         ),
@@ -1694,31 +2046,44 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: theme.colorScheme.primary, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '$label. Drag to move, pull the corner handle to resize.',
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              Icon(icon, color: theme.colorScheme.primary, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '$label. Drag to move, pull the corner handle to resize.',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
+              TextButton.icon(
+                onPressed: () {
+                  context.read<PdfBloc>().add(
+                    RemoveAnnotationEvent(selected.id),
+                  );
+                  setState(() {
+                    _selectedAnnotationId = null;
+                  });
+                },
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text('Delete'),
+              ),
+            ],
+          ),
+          if (quickActions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: quickActions),
             ),
-          ),
-          ...quickActions,
-          TextButton.icon(
-            onPressed: () {
-              context.read<PdfBloc>().add(RemoveAnnotationEvent(selected.id));
-              setState(() {
-                _selectedAnnotationId = null;
-              });
-            },
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            label: const Text('Delete'),
-          ),
+          ],
         ],
       ),
     );
@@ -2216,15 +2581,33 @@ class _PickedEditorImage {
 class _TextInsertDraft {
   const _TextInsertDraft({
     required this.text,
+    required this.textColor,
     required this.fontSize,
     required this.width,
     required this.height,
+    required this.boxStyle,
+    required this.alignment,
+    required this.fillColor,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.bold,
+    required this.italic,
+    required this.underline,
   });
 
   final String text;
+  final Color textColor;
   final double fontSize;
   final double width;
   final double height;
+  final PdfTextBoxStyle boxStyle;
+  final PdfTextAlignment alignment;
+  final Color fillColor;
+  final Color borderColor;
+  final double borderWidth;
+  final bool bold;
+  final bool italic;
+  final bool underline;
 }
 
 class _TableInsertDraft {

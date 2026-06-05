@@ -73,6 +73,14 @@ class AddAnnotationEvent extends PdfEvent {
     this.tableCells = const [],
     this.tableBorderWidth,
     this.textFontSize,
+    this.textBoxStyle,
+    this.textAlignment,
+    this.textFillColor,
+    this.textBorderColor,
+    this.textBorderWidth,
+    this.textBold,
+    this.textItalic,
+    this.textUnderline,
     this.points = const [],
     this.strokeWidth,
     this.shapeType,
@@ -96,6 +104,14 @@ class AddAnnotationEvent extends PdfEvent {
   final List<String> tableCells;
   final double? tableBorderWidth;
   final double? textFontSize;
+  final PdfTextBoxStyle? textBoxStyle;
+  final PdfTextAlignment? textAlignment;
+  final Color? textFillColor;
+  final Color? textBorderColor;
+  final double? textBorderWidth;
+  final bool? textBold;
+  final bool? textItalic;
+  final bool? textUnderline;
   final List<Offset> points;
   final double? strokeWidth;
   final ShapeType? shapeType;
@@ -120,6 +136,14 @@ class AddAnnotationEvent extends PdfEvent {
     tableCells,
     tableBorderWidth,
     textFontSize,
+    textBoxStyle,
+    textAlignment,
+    textFillColor,
+    textBorderColor,
+    textBorderWidth,
+    textBold,
+    textItalic,
+    textUnderline,
     points,
     strokeWidth,
     shapeType,
@@ -144,7 +168,17 @@ class UpdateAnnotationEvent extends PdfEvent {
     this.imageFocusX,
     this.imageFocusY,
     this.tableBorderWidth,
+    this.text,
+    this.color,
     this.textFontSize,
+    this.textBoxStyle,
+    this.textAlignment,
+    this.textFillColor,
+    this.textBorderColor,
+    this.textBorderWidth,
+    this.textBold,
+    this.textItalic,
+    this.textUnderline,
   });
 
   final String annotationId;
@@ -156,7 +190,17 @@ class UpdateAnnotationEvent extends PdfEvent {
   final double? imageFocusX;
   final double? imageFocusY;
   final double? tableBorderWidth;
+  final String? text;
+  final Color? color;
   final double? textFontSize;
+  final PdfTextBoxStyle? textBoxStyle;
+  final PdfTextAlignment? textAlignment;
+  final Color? textFillColor;
+  final Color? textBorderColor;
+  final double? textBorderWidth;
+  final bool? textBold;
+  final bool? textItalic;
+  final bool? textUnderline;
 
   @override
   List<Object?> get props => [
@@ -169,7 +213,17 @@ class UpdateAnnotationEvent extends PdfEvent {
     imageFocusX,
     imageFocusY,
     tableBorderWidth,
+    text,
+    color,
     textFontSize,
+    textBoxStyle,
+    textAlignment,
+    textFillColor,
+    textBorderColor,
+    textBorderWidth,
+    textBold,
+    textItalic,
+    textUnderline,
   ];
 }
 
