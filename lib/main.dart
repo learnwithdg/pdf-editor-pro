@@ -12,20 +12,23 @@ import 'services/ads_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   runApp(const PdfEditorApp());
 
   if (!AdsService.isRunningInWidgetTest) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
-        Future<void>.delayed(const Duration(seconds: 20))
-            .then((_) => AdsService().init())
-            .catchError((Object error) {
+        Future<void>.delayed(
+          const Duration(seconds: 20),
+        ).then((_) => AdsService().init()).catchError((Object error) {
           debugPrint('AdMob initialization will retry later: $error');
         }),
       );
@@ -139,16 +142,36 @@ class PdfEditorApp extends StatelessWidget {
               colorScheme: scheme,
               scaffoldBackgroundColor: scheme.surface,
               textTheme: isDark
-                  ? GoogleFonts.manropeTextTheme(ThemeData.dark().textTheme).copyWith(
-                      displayLarge: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).displayLarge,
-                      displayMedium: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).displayMedium,
-                      displaySmall: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).displaySmall,
-                      headlineLarge: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).headlineLarge,
-                      headlineMedium: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).headlineMedium,
-                      headlineSmall: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).headlineSmall,
-                      titleLarge: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).titleLarge,
-                      titleMedium: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).titleMedium,
-                      titleSmall: GoogleFonts.soraTextTheme(ThemeData.dark().textTheme).titleSmall,
+                  ? GoogleFonts.manropeTextTheme(
+                      ThemeData.dark().textTheme,
+                    ).copyWith(
+                      displayLarge: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).displayLarge,
+                      displayMedium: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).displayMedium,
+                      displaySmall: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).displaySmall,
+                      headlineLarge: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).headlineLarge,
+                      headlineMedium: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).headlineMedium,
+                      headlineSmall: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).headlineSmall,
+                      titleLarge: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).titleLarge,
+                      titleMedium: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).titleMedium,
+                      titleSmall: GoogleFonts.soraTextTheme(
+                        ThemeData.dark().textTheme,
+                      ).titleSmall,
                     )
                   : baseTextTheme,
               appBarTheme: AppBarTheme(
@@ -157,15 +180,18 @@ class PdfEditorApp extends StatelessWidget {
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 centerTitle: true,
-                titleTextStyle: (isDark
-                        ? GoogleFonts.soraTextTheme(ThemeData.dark().textTheme)
-                        : headingTheme)
-                    .titleLarge
-                    ?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.4,
-                      color: scheme.onSurface,
-                    ),
+                titleTextStyle:
+                    (isDark
+                            ? GoogleFonts.soraTextTheme(
+                                ThemeData.dark().textTheme,
+                              )
+                            : headingTheme)
+                        .titleLarge
+                        ?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
+                          color: scheme.onSurface,
+                        ),
                 iconTheme: IconThemeData(color: scheme.onSurface),
               ),
               cardTheme: CardThemeData(
@@ -175,33 +201,50 @@ class PdfEditorApp extends StatelessWidget {
                 margin: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
-                  side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.85)),
+                  side: BorderSide(
+                    color: scheme.outlineVariant.withValues(alpha: 0.85),
+                  ),
                 ),
               ),
               filledButtonTheme: FilledButtonThemeData(
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   textStyle: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
               outlinedButtonTheme: OutlinedButtonThemeData(
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   side: BorderSide(color: scheme.outlineVariant),
                 ),
               ),
               textButtonTheme: TextButtonThemeData(
                 style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   textStyle: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               inputDecorationTheme: InputDecorationTheme(
                 filled: true,
                 fillColor: scheme.surfaceContainerLow,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(color: scheme.outlineVariant),
@@ -216,9 +259,14 @@ class PdfEditorApp extends StatelessWidget {
                 ),
               ),
               chipTheme: ChipThemeData(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 side: BorderSide.none,
-                labelStyle: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700),
+                labelStyle: TextStyle(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
                 backgroundColor: scheme.surfaceContainerHigh,
               ),
               dividerTheme: DividerThemeData(color: scheme.outlineVariant),

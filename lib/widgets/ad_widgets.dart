@@ -30,7 +30,7 @@ class _SmartBannerAdState extends State<SmartBannerAd> {
       final loadedAt = _loadedAt;
       final shouldRefresh =
           loadedAt == null ||
-          DateTime.now().difference(loadedAt) >= const Duration(seconds: 70);
+          DateTime.now().difference(loadedAt) >= const Duration(seconds: 150);
       if (!_isLoading && (!_isLoaded || _bannerAd == null || shouldRefresh)) {
         _loadAd();
       }
@@ -51,8 +51,8 @@ class _SmartBannerAdState extends State<SmartBannerAd> {
     }
     _isLoading = true;
     final canLoad = await AdsService().waitForAdLoadSlot(
-      minSpacing: const Duration(seconds: 6),
-      startupQuietPeriod: const Duration(seconds: 12),
+      minSpacing: const Duration(seconds: 10),
+      startupQuietPeriod: const Duration(seconds: 8),
     );
     if (!mounted || !canLoad) {
       _isLoading = false;
@@ -111,7 +111,11 @@ class _SmartBannerAdState extends State<SmartBannerAd> {
           if (allowFallback && _bannerAdUnitIndex < adUnitIds.length - 1) {
             _isLoading = false;
             _bannerAdUnitIndex++;
-            unawaited(_loadAd(allowFallback: false));
+            unawaited(
+              Future<void>.delayed(
+                const Duration(seconds: 4),
+              ).then((_) => mounted ? _loadAd(allowFallback: false) : null),
+            );
             return;
           }
           setState(() {
@@ -222,16 +226,23 @@ class _SmartNativeAdState extends State<SmartNativeAd> {
   @override
   void initState() {
     super.initState();
+    if (AdsService.isRunningInWidgetTest) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _loadAd();
+        unawaited(
+          Future<void>.delayed(
+            const Duration(seconds: 3),
+          ).then((_) => mounted ? _loadAd() : null),
+        );
       }
     });
     _refreshSub = AdsService().adRefreshStream.listen((_) {
       final loadedAt = _loadedAt;
       final shouldRefresh =
           loadedAt == null ||
-          DateTime.now().difference(loadedAt) >= const Duration(seconds: 90);
+          DateTime.now().difference(loadedAt) >= const Duration(seconds: 180);
       if (!_isLoading && (!_isLoaded || _nativeAd == null || shouldRefresh)) {
         _loadAd();
       }
@@ -248,8 +259,8 @@ class _SmartNativeAdState extends State<SmartNativeAd> {
     }
     _isLoading = true;
     final canLoad = await AdsService().waitForAdLoadSlot(
-      minSpacing: const Duration(seconds: 8),
-      startupQuietPeriod: const Duration(seconds: 15),
+      minSpacing: const Duration(seconds: 12),
+      startupQuietPeriod: const Duration(seconds: 10),
     );
     if (!mounted || !canLoad) {
       _isLoading = false;
@@ -296,7 +307,11 @@ class _SmartNativeAdState extends State<SmartNativeAd> {
           if (allowFallback && _nativeAdUnitIndex < adUnitIds.length - 1) {
             _isLoading = false;
             _nativeAdUnitIndex++;
-            unawaited(_loadAdInternal(allowFallback: false));
+            unawaited(
+              Future<void>.delayed(const Duration(seconds: 5)).then(
+                (_) => mounted ? _loadAdInternal(allowFallback: false) : null,
+              ),
+            );
             return;
           }
           setState(() {

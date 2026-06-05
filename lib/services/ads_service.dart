@@ -30,9 +30,9 @@ class AdsService with WidgetsBindingObserver {
     defaultValue: 'ca-app-pub-5724450075816645/8373802313',
   );
 
-  static const Duration _adRefreshInterval = Duration(seconds: 60);
-  static const Duration _fullscreenCooldown = Duration(seconds: 60);
-  static const Duration _startupNetworkGrace = Duration(seconds: 45);
+  static const Duration _adRefreshInterval = Duration(seconds: 120);
+  static const Duration _fullscreenCooldown = Duration(seconds: 90);
+  static const Duration _startupNetworkGrace = Duration(seconds: 25);
   static const Duration _appOpenCooldown = Duration(minutes: 8);
   static const Duration _appOpenExpiry = Duration(hours: 4);
 
@@ -178,10 +178,13 @@ class AdsService with WidgetsBindingObserver {
     _startupWarmupTimer?.cancel();
     _startupWarmupTimer = Timer(_startupNetworkGrace, () {
       _loadAppOpenAd();
-      _loadInterstitialAd(force: true);
-      Timer(const Duration(seconds: 10), () => _loadRewardedAd(force: true));
       Timer(
-        const Duration(seconds: 18),
+        const Duration(seconds: 14),
+        () => _loadInterstitialAd(force: true),
+      );
+      Timer(const Duration(seconds: 34), () => _loadRewardedAd(force: true));
+      Timer(
+        const Duration(seconds: 52),
         () => _loadRewardedInterstitialAd(force: true),
       );
     });
@@ -206,9 +209,9 @@ class AdsService with WidgetsBindingObserver {
     }
     final appAge = DateTime.now().difference(_appStartedAt);
     final delay = appAge >= _startupNetworkGrace
-        ? const Duration(seconds: 1)
+        ? const Duration(seconds: 4)
         : _startupNetworkGrace - appAge;
-    _premiumWarmupTimer = Timer(delay, () => warmUpPremiumAds(force: true));
+    _premiumWarmupTimer = Timer(delay, () => warmUpPremiumAds());
   }
 
   void _loadAppOpenAd({bool force = false}) {
@@ -234,7 +237,7 @@ class AdsService with WidgetsBindingObserver {
     }
     _isAppOpenAdLoading = true;
     final canLoad = await waitForAdLoadSlot(
-      minSpacing: const Duration(seconds: 8),
+      minSpacing: const Duration(seconds: 10),
       startupQuietPeriod: force
           ? const Duration(seconds: 0)
           : _startupNetworkGrace,
@@ -328,7 +331,7 @@ class AdsService with WidgetsBindingObserver {
     if (_interstitialAd != null) return;
     _isInterstitialAdLoading = true;
     final canLoad = await waitForAdLoadSlot(
-      minSpacing: const Duration(seconds: 8),
+      minSpacing: const Duration(seconds: 10),
       startupQuietPeriod: force
           ? const Duration(seconds: 0)
           : _startupNetworkGrace,
@@ -492,7 +495,7 @@ class AdsService with WidgetsBindingObserver {
     if (_rewardedAd != null) return;
     _isRewardedAdLoading = true;
     final canLoad = await waitForAdLoadSlot(
-      minSpacing: const Duration(seconds: 8),
+      minSpacing: const Duration(seconds: 12),
       startupQuietPeriod: force
           ? const Duration(seconds: 0)
           : _startupNetworkGrace,
@@ -633,7 +636,7 @@ class AdsService with WidgetsBindingObserver {
     if (_rewardedInterstitialAd != null) return;
     _isRewardedInterstitialAdLoading = true;
     final canLoad = await waitForAdLoadSlot(
-      minSpacing: const Duration(seconds: 8),
+      minSpacing: const Duration(seconds: 12),
       startupQuietPeriod: force
           ? const Duration(seconds: 0)
           : _startupNetworkGrace,
